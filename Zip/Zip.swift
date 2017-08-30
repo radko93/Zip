@@ -252,7 +252,7 @@ public class Zip {
      
      - notes: Supports implicit progress composition
      */
-    public class func zipFiles(paths: [URL], zipFilePath: URL, password: String?, compression: ZipCompression = .DefaultCompression, progress: ((_ progress: Double) -> ())?) throws {
+    public class func zipFiles(paths: [URL], zipFilePath: URL, password: String?, compression: ZipCompression = .DefaultCompression, excludedFilenames: [String]? = nil, progress: ((_ progress: Double) -> ())?) throws {
         
         // File manager
         let fileManager = FileManager.default
@@ -261,7 +261,24 @@ public class Zip {
         let destinationPath = zipFilePath.path
         
         // Process zip paths
-        let processedPaths = ZipUtilities().processZipPaths(paths)
+        var processedPaths = ZipUtilities().processZipPaths(paths)
+        
+        // optionally, exclude some filenames
+        if let excludedFilenames = excludedFilenames {
+            processedPaths = processedPaths.filter({
+                
+                // look for match of filenames to exclude
+                for excludedFilename in excludedFilenames {
+                    if let filename = $0.fileName, filename.contains(excludedFilename) {
+                        print("skipping", filename)
+                        return false
+                    }
+                }
+                
+                // if we get here, this filename should be included
+                return true
+            })
+        }
         
         // Zip set up
         let chunkSize: Int = 16384
